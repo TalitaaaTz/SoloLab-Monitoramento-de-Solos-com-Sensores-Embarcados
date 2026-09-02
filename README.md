@@ -9,7 +9,6 @@ pelo assistente.
 > são leituras brutas dos sensores — não devem ser usados como diagnóstico definitivo.
 
 ## Arquitetura
-
 ```
 ESP32 ──► Supabase REST API ──► tabela public.leituras_solo
                                         │
