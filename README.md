@@ -49,14 +49,6 @@ cp .env.example .env       # preencha com as chaves do seu projeto Supabase
 npm install                # ou bun install / pnpm install
 npm run dev                # http://localhost:8080
 ```
-
-Variáveis de ambiente aceitas (apenas públicas):
-
-| Variável | Onde encontrar |
-| --- | --- |
-| `VITE_SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase → Project Settings → API → anon public key |
-
 ## Build de produção
 
 ```bash
@@ -84,11 +76,6 @@ O app não depende de servidor próprio para funcionar — o roteamento usa
 `HashRouter`, compatível com WebView do Android e iOS.
 
 ## Configuração do Supabase
-
-1. Crie um projeto em <https://supabase.com>.
-2. Em **SQL Editor**, rode o conteúdo de `supabase-setup.sql`.
-3. Copie a `Project URL` e a `anon public key` para o arquivo `.env`.
-
 A tabela `public.leituras_solo` já vem com RLS habilitado:
 
 - Qualquer um pode **ler** apenas leituras com `status_leitura = 'valida'`.
@@ -96,61 +83,12 @@ A tabela `public.leituras_solo` já vem com RLS habilitado:
   parâmetros estiverem dentro dos limites validados (ver SQL).
 
 ## Como o ESP32 envia dados
-
 O firmware envia uma média de 10 leituras a cada ~6 segundos diretamente
 ao Supabase, usando a chave pública (`anon`) e a API REST:
-
-```cpp
-HTTPClient http;
-http.begin("https://SEU-PROJETO.supabase.co/rest/v1/leituras_solo");
-http.addHeader("apikey", "SUA_CHAVE_ANON_PUBLICA");
-http.addHeader("Authorization", "Bearer SUA_CHAVE_ANON_PUBLICA");
-http.addHeader("Content-Type", "application/json");
-http.addHeader("Prefer", "return=minimal");
-
-String corpo = "{"
-  "\"dispositivo_id\":\"esp32-lab-01\","
-  "\"temperatura_thcs_bruta\":25.4,"
-  "\"umidade_thcs_bruta\":61.2,"
-  "\"condutividade_thcs_bruta\":840,"
-  "\"solo_analogico_bruto\":2380,"
-  "\"quantidade_amostras\":10,"
-  "\"intervalo_amostra_ms\":6000,"
-  "\"status_leitura\":\"valida\""
-"}";
-http.POST(corpo);
-```
 
 > Uma leitura é considerada **inválida** somente quando `umidade_thcs_bruta = 0`
 > **e** `condutividade_thcs_bruta = 0` ao mesmo tempo. Não envie esses casos —
 > ou envie com `status_leitura = 'invalida'` apenas para registro local.
-
-## Como criar a Edge Function `chat-solo`
-
-```bash
-# 1. Instale a CLI do Supabase
-npm install -g supabase
-
-# 2. Faça login e linke o projeto
-supabase login
-supabase link --project-ref SEU_PROJECT_REF
-
-# 3. Configure a chave do Gemini (gratuita: https://aistudio.google.com/app/apikey)
-supabase secrets set GEMINI_API_KEY=AIza...
-
-# 4. Faça o deploy
-supabase functions deploy chat-solo --no-verify-jwt
-```
-
-O dashboard chama a função assim:
-
-```ts
-supabase.functions.invoke("chat-solo", {
-  body: { mensagem, dispositivoId, periodoInicial, periodoFinal },
-});
-```
-
-A `GEMINI_API_KEY` **nunca** entra no frontend.
 
 ## Status dos dados
 
